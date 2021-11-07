@@ -296,20 +296,34 @@ So, $\frac{100}{18N} \ge 0,95$
 
 $N \le 5,84$
 
+__Using Chebyshev's inequality, we can get that__
+
+$P(S \ge 1) = P(S-\frac{100}{18N} \ge 1-\frac{100}{18N}) \le P(|S-\frac{100}{18N}| \ge 1-\frac{100}{18N}) \le \frac{100(\frac{1}{18N})^{2}}{(1-\frac{100}{18N})} \ge 0,95$
+
+So, $N \le 5,56$
+
+__Using Central limit theorem we can get the following__
+
+$P(S \ge 1) = 1 - P(S \le 1) = 1 - P(S-\frac{100}{18N} \le 1-\frac{100}{18N}) =  P(\frac{S-\frac{100}{18N}}{\frac{1}{18N}*10} \le \frac{1-\frac{1}{18N}}{\frac{1}{18N}*10}) \approx 1 - \Phi(\frac{1-\frac{1}{18N}}{\frac{1}{18N}*10}) \ge 0,05$
+
+So, $N \le 4,63$
+
 __Probability that location will be identified as safe is equal to 0. On average, the time to receive 100 clicks is 5,55 seconds and the following simulation proves it__
 ```{r}
 n <- 100
-N <- 5.54
+N <- 4.63
 nu1 <- (nu1*(1/N))
 s <- colSums(matrix(rexp(n*K, rate = 1/nu1), nrow=n))
 print(s)
 print(mean(s))
+greter_1 = which(s > 1)
+print(length(greter_1))
+prob = length(greter_1)/(length(s))
+print(prob)
 ```
 
-__Next, proceed with all the remaining steps__
 
-
-__Do not forget to include several sentences summarizing your work and the conclusions you have made!__ 
+__As we can see when parameter N is lower than 4,63, probability that location is safe is always bigger than 0,95__ 
 
 
 ### General summary and conclusions
