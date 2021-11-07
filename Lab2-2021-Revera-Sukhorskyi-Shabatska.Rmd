@@ -248,17 +248,17 @@ __Do not forget to include several sentences summarizing your work and the concl
 #### First, generate samples an sample means: 
 
 ```{r}
-nu1 <- 1  # change this!
+nu1 <- 1/(10+id)
 K <- 1e3
 n <- 5
-sample_means <- colMeans(matrix(rexp(n*K, rate = nu1), nrow=n))
+sample_means <- colMeans(matrix(rexp(n*K, rate = 1/nu1), nrow=n))
 ```
 
 #### Next, calculate the parameters of the standard normal approximation
 
 ```{r}
-mu <- 0       # change this!
-sigma <- 1    # change this!
+mu <- nu1      # change this!
+sigma <- sqrt(((1/(id+10))^2)/n)    # change this!
 ```
 
 #### We can now plot ecdf and cdf
@@ -272,6 +272,22 @@ plot(Fs,
      lwd = 2,
      main = "Comparison of ecdf and cdf")
 curve(pnorm(x, mean = mu, sd = sigma), col = "red", lwd = 2, add = TRUE)
+legend("topleft", legend = c("Normal Curve", "Sample Curve"), lwd = 3, col = c("red", "blue"))
+```
+#### Maximal difference between the two c.d.f.’s
+
+```{r}
+t <- vector("numeric",   length = n)
+max(abs(Fs(t) - pnorm(t, mean = mu, sd = sigma)))
+```
+__Probability that location will be identified as safe is equal to 0. On average, the time to receive 100 clicks is 5,55 seconds and the following simulation proves it__
+```{r}
+n <- 100
+N <- 5.54
+nu1 <- (nu1*(1/N))
+s <- colSums(matrix(rexp(n*K, rate = 1/nu1), nrow=n))
+print(s)
+print(mean(s))
 ```
 
 __Next, proceed with all the remaining steps__
