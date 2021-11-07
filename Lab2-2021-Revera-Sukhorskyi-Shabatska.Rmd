@@ -280,6 +280,22 @@ legend("topleft", legend = c("Normal Curve", "Sample Curve"), lwd = 3, col = c("
 t <- vector("numeric",   length = n)
 max(abs(Fs(t) - pnorm(t, mean = mu, sd = sigma)))
 ```
+__Number of clicks in one minute does not exceed 100 in terms of $S$ mean__
+
+$S = X_1 + X_2 + ... +X_{100} \ge 60$
+
+__Using Markov inequality, we can get that__
+
+$P(S \ge 1) \le E(S)$
+
+$E(S) = E(X_1) + E(X_2) + ... + E(X_{100}) = 100 * (\frac{1}{\lambda N}) = \frac{100}{18N}$
+
+$P(S \ge 60) \le \frac{100}{18N}$
+
+So, $\frac{100}{18N} \ge 0,95$
+
+$N \le 5,84$
+
 __Probability that location will be identified as safe is equal to 0. On average, the time to receive 100 clicks is 5,55 seconds and the following simulation proves it__
 ```{r}
 n <- 100
