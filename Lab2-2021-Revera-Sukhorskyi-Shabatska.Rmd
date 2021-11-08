@@ -1,6 +1,6 @@
 ---
 title: 'P&S-2021: Lab assignment 2'
-author: "Name1, Name2, Name3"
+author: "Revera, Sukhorskyy, Shabatska"
 output:
   html_document:
     df_print: paged
@@ -128,12 +128,12 @@ __Do not forget to include several sentences summarizing your work and the concl
     +  calculate the number of elements of the sample which are less than critical value ($8 \times 10^8$) and calculate the empirical probability; comment whether it is close to the desired level \(0.95\)
 
 ```{r}
-T = 30.1 * 365 * 24 * 3600
+T = 30.1 * 365.25 * 24 * 3600
 lambda = log10(2)/T
 
 id = 8
 
-m = (id) * 1e-6 / 1000
+m = (id) * 1e-6
 Na = 6e23
 M = 137         # Atomic mass of Cesium-137, obviously
 N = (m/M) * Na
@@ -148,14 +148,14 @@ sample_means <- colMeans(matrix(rpois(n*K, lambda = mu), nrow=n))
 #### Next, calculate the parameters of the standard normal approximation
 
 ```{r}
-# mu for normal distribution = mu of poisson distribution
-sigma <- sqrt(mu)   # Poisson r.v. parameter = variance
+mu1 <- mean(sample_means)
+sigma <- sqrt(mean((sample_means - mu1)^2))
 ```
 
-#### We can now plot ecdf and cdf
+#### We can now create a function to plot ecdf and cdf and calculate Maximal difference
 
 ```{r}
-compute <- function(n){
+compute4n <- function(n, mu, sample_means){
     xlims <- c(mu-3*sigma,mu+3*sigma)
     Fs <- ecdf(sample_means)
     plot("", 
@@ -163,47 +163,47 @@ compute <- function(n){
         ylim = c(0,1),
         col = "blue",
         lwd = 2,
-        main = "Comparison of ecdf and cdf")
+        main = paste("Comparison of ecdf and cdf (n=", n, ")", sep=""))
     curve(pnorm(x, mean = mu, sd = sigma), col = "red", lwd = 2, add = TRUE)
     curve(Fs, col = "blue", lwd = 2, add = TRUE)
+    
+    t <- seq(from = mu - 3*sigma, to = mu + 3*sigma, by = mu / 200)
+    max(abs(Fs(t) - pnorm(t, mean = mu, sd = sigma)))
 }
-compute(n)
-```
-
-#### Maximal difference
-```{r}
-t <- seq(xlims[1],xlims[2])
-max(abs(Fs(t) - pnorm(t, mean = mu, sd = sigma)))
+compute4n(n, mu1, sample_means)
 ```
 
 #### Cases for other `n`
 ```{r}
-compute(10)
-compute(50)
+n = 10
+sample_means <- colMeans(matrix(rpois(n*K, lambda = mu), nrow=n))
+mu2 <- mean(sample_means)
+sigma <- sqrt(mean((sample_means - mu2)^2))
+compute4n(10, mu2, sample_means)
+
+n = 50
+sample_means <- colMeans(matrix(rpois(n*K, lambda = mu), nrow=n))
+mu3 <- mean(sample_means)
+sigma <- sqrt(mean((sample_means - mu3)^2))
+compute4n(50, mu3, sample_means)
 ```
 
 #### Largest possible `n` for which total number of decays in one second is less than $8 \times 10^8$ withprobability of least 0.95
+We will use following algorithm to find such `n`
 ```{r}
 max_value = 8e8
 
-# We use binary search to find such `n`. For this example we already know that
-# our `n` is 71996,so we will restrict `l` and `r` to be not far from that `n`
-# so that it takes less time to compute. In general case `l` should be set to 0
-# and `r` be limited using Markov inequality, Chernoff bound and CLT
-
-# Ex <- mean(colMeans(matrix(rpois(n*K, lambda = mu), nrow=n)))
-# print(Ex)
-# Markov_limit <- 1/max_value * Ex   # P(X>=a) <= 1/a * E(X)
-# print(Markov_limit)
-
-l = 71990
-r = 71999
+l = 0
+r = 1000
 
 m = 0
 res_m = 0
 
-while(r-l > 1){
-  m = as.integer((l+r)/2)
+defaultW <- getOption("warn") # Turn off warnings
+options(warn = -1)
+
+while(r-l > 0.00001){
+  m = (l+r)/2
   sample_sum = colSums(matrix(rpois(m*K, lambda = mu), nrow=m))
   Ps_temp <- ecdf(sample_sum)(max_value)
   if(Ps_temp > 0.95){
@@ -214,17 +214,39 @@ while(r-l > 1){
   else if(Ps_temp < 0.95){
     r = m
   }
-  # cat(Ps, m, "\n")    # print step-by-step interim results
+  cat("  n =", m, " with P =", Ps_temp, "\n")    # print step-by-step interim results
 }
-cat("result:", Ps, res_m)
+options(warn = defaultW)    # Turn warnings back on
+
+cat("Least n =", res_m, " with P =", Ps, "\n")
+
 ```
-
-__Next, proceed with all the remaining steps__
-
+For all n less than found above probability will be 1, and for all n less, probability will be 0
 
 
-__Do not forget to include several sentences summarizing your work and the conclusions you have made!__ 
+#### Theoritical bounds
+Markov inequality: $P(S \ge a) \le \frac{1}{a} * E(S) = P(S \ge a) \le \frac{1}{a} * \sum  E(S_i) = P(S \ge a) \le \frac{1}{a} * n * E(S_1) = 0.95 => n = \frac{0.95a}{E(S_1)}$
 
+Chernoff bound: $\forall t > 0: \Pr(X \geq a) = \Pr(e^{t\cdot X} \geq e^{t\cdot a})  \leq \frac{\mathrm{E}\left [e^{t\cdot X}\right]}{e^{t\cdot a}}$
+
+CTL: $P(\frac{S - n\mu}{\sigma\sqrt{n}} \le \frac{8*10^8 - n\mu}{\sigma \sqrt{n}}) \rightarrow Ф(\frac{8*10^8 - n\mu}{\sigma \sqrt{n}}) \ge 0.95$
+
+So now let's compute all of them with R
+```{r}
+Ex <- mean(colMeans(matrix(rpois(n*K, lambda = mu), nrow=n)))
+n1 <- 0.95 * max_value / Ex
+cat("Markov:   ", n1, "\n")
+
+n2 <- (log(0.95) + max_value) / Ex
+cat("Chernoff: ", n2, "\n")
+
+sample_m <- colMeans(matrix(rpois(n*K, lambda = mu), nrow=n))
+std_dev <- sd(sample_m)
+sqrt_d <- sqrt((1.6 * std_dev)^2 + 4 * max_value * Ex)
+n3 <- ((-1.6 * std_dev + sqrt_d) / (2 * Ex))^2
+cat("CTL:      ", n3, "\n")
+```
+In this case, Chernoff bound gave the most accurate value of `n` not far away from CTL. Markov inequality gave somewhat less accurate result comparing with other 2 approaches 
 
 
 ### Task 3. 
