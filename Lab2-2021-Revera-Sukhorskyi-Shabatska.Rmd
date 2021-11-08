@@ -155,10 +155,23 @@ for (i in 1:num_sims-1) {
   err_count <- c(err_count, sim_res[[2]])
 }
 print(mean_prob)
-hist(errors, xlim=c(0, 4), freq=T)
+print(err_count)
+hist(err_count, xlim=c(0, 4), freq=T)
 ```
 
-__Do not forget to include several sentences summarizing your work and the conclusions you have made!__ 
+
+### Predict epsilon which forms the interval in which the estimate \(\hat p\) falls with probability at least \(0.95\) and find N that guarantees that \(\varepsilon \le 0.03\)
+
+```{r}
+N <- 100
+std_dev <- sd(err_count == 0)
+std_err <- sqrt(N)
+eps <- qnorm(0.95, 0, 1) * std_dev / std_err
+cat("For N =", N, "epsilon =", eps, "\n")
+
+N_ <- round((std_dev * qnorm(0.975, 0, 1) / eps) ** 2, 0)
+cat("N =", N_, "guarantees that epsilon <= 0.03\n")
+```
 
 
 ### Task 2. 
