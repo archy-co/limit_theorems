@@ -345,8 +345,8 @@ sample_means <- colMeans(matrix(rexp(n*K, rate = 1/nu1), nrow=n))
 #### Next, calculate the parameters of the standard normal approximation
 
 ```{r}
-mu <- nu1      # change this!
-sigma <- sqrt(((1/(id+10))^2)/n)    # change this!
+mu <- nu1
+sigma <- sqrt(((1/(id+10))^2)/n)
 ```
 
 #### We can now plot ecdf and cdf
@@ -416,4 +416,4 @@ __As we can see when parameter N is lower than 4,63, probability that location i
 
 ### General summary and conclusions
 
-SUmmarize here what you've done, whether you solved the tasks, what difficulties you had etc
+As a result, we see that the central limit theorem shows the most accurate result, and Chebyshev's inequality is slightly more accurate than Markov's.
