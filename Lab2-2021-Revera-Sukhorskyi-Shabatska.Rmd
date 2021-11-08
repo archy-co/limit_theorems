@@ -62,12 +62,11 @@ output:
 #### First, we set the **id** of the team and define the probability \(p\) and the generator and parity-check matrices \(G\) and \(H\)
 
 ```{r}
-# your team id number 
-                          ###
-id <- 50                  ### Change to the correct id!
-                          ###
+id <- 8
+
 set.seed(id)
 p <- id/100
+
 # matrices G and H
 G <- matrix(c(1, 1, 1, 0, 0, 0, 0,
 		1, 0, 0, 1, 1, 0, 0,
@@ -76,33 +75,88 @@ G <- matrix(c(1, 1, 1, 0, 0, 0, 0,
 H <- t(matrix(c(1, 0, 1, 0, 1, 0, 1,
 		0, 1, 1, 0, 0, 1, 1,
 		0, 0, 0, 1, 1, 1, 1), nrow = 3, byrow = TRUE))
-# cat("The matrix G is: \n") 
-#G  
-#cat("The matrix H is: \n") 
-#H
-#cat("The product GH must be zero: \n")
-#(G%*%H) %%2
 ```
 
 #### Next, generate the messages
 
 ```{r}
-# generate N messages
+num_messages = 5
 
-message_generator <- function(N) {
-  matrix(sample(c(0,1), 4*N, replace = TRUE), nrow = N)
-}  
-messages <- message_generator(100)
-codewords <- (messages %*% G) %% 2
+simulate <- function(){
+  
+  # generate N messages
+  message_generator <- function(N) {
+    matrix(sample(c(0,1), 4*N, replace = TRUE), nrow = N)
+  }  
+  messages <- message_generator(num_messages)
+  codewords <- (messages %*% G) %% 2
+  
+  # generate errors
+  errors_generator <- function(N){
+    matrix(sample(c(0,1), 7*N, replace = TRUE, prob = c(1-p, p)), nrow = N)
+  }
+  
+  errors <- errors_generator(num_messages)
+  received <- (codewords + errors) %% 2
+  
+  ZZ = (received%*%H) %%2
+  
+  wrong <- strtoi(apply(ZZ, 1, function(row) paste(row, collapse = "")), base = 2) + 1
+  
+  decoded <- received
+  for (i in seq(1:nrow(decoded))){
+    if(wrong[i] < 8){
+      decoded[i, wrong[i]] <- xor(decoded[i, wrong[i]], 1) 
+    }
+  }
+  decoded_messages = decoded[, c(3,5,6,7)]
+  comparisons <- decoded_messages == messages
+  
+  errors_count_vector = vector(length = num_messages)
+  errors_count = 0
+  i = 0
+  c = 0
+  err_c_temp = 0
+  num_correct = 0
+  
+  for(cmp in comparisons){
+    if(c%%4 == 0){
+      errors_count_vector[i] = err_c_temp
+      i=i+1
+      errors_count = errors_count + err_c_temp
+      if(err_c_temp == 0)
+        num_correct = num_correct+1
+      err_c_temp = 0
+    }
+    if(cmp == FALSE){
+      err_c_temp = err_c_temp+1
+    }
+    c=c+1
+  }
+  prob_of_correct = num_correct/num_messages
+  
+  return(list(prob_of_correct, errors_count_vector))
+}
+
+simulate()
+
 ```
-#### Generate random errors; do not forget that they occur with probability \(p\)! Next, generate the received messages
-
 ```{r}
-#  errors <- ...
-#  received <-   
-```
+num_messages = 100
+num_sims = 100
 
-The next steps include detecting the errors in the received messages, correcting them, and then decoding the obtained messages. After this, you can continue with calculating all the quantities of interest
+init_sim_res = simulate()
+mean_prob <- init_sim_res[[1]]
+err_count <- init_sim_res[[2]]
+
+for (i in 1:num_sims-1) {
+  sim_res   <- simulate()
+  mean_prob <- (mean_prob + sim_res[[1]]) / 2
+  err_count <- c(err_count, sim_res[[2]])
+}
+print(mean_prob)
+hist(errors, xlim=c(0, 4), freq=T)
+```
 
 __Do not forget to include several sentences summarizing your work and the conclusions you have made!__ 
 
